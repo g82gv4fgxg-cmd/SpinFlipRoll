@@ -1,20 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import Wheel from "./Wheel";
 import { buildSegments, nextColorHex, pickWinner, spinDelta } from "./wheelMath";
 import { loadData, saveData } from "./storage";
 import type { AppData, AppSettings, SpinResult, WheelEntry, WheelList } from "./types";
 
 const spinDurationMs = 4400;
+type Screen = "home" | "wheel";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadData());
+  const [screen, setScreen] = useState<Screen>("home");
   const [selectedListId, setSelectedListId] = useState(() => data.lists[0]?.id ?? "");
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
+  const [winnerEntry, setWinnerEntry] = useState<WheelEntry | null>(null);
   const [lastWinner, setLastWinner] = useState<string | undefined>();
   const [newEntry, setNewEntry] = useState("");
   const [newListName, setNewListName] = useState("");
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => saveData(data), [data]);
 
@@ -29,6 +34,52 @@ export default function App() {
     [entries, data.settings.weighted]
   );
   const listHistory = data.history.filter((result) => result.listId === selectedList?.id).slice(0, 8);
+
+  function audioContext() {
+    const AudioContextConstructor =
+      window.AudioContext ??
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+    audioContextRef.current ??= new AudioContextConstructor();
+    return audioContextRef.current;
+  }
+
+  function playTone(frequency: number, duration = 0.06, volume = 0.08, type: OscillatorType = "sine") {
+    const context = audioContext();
+    if (!context) return;
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(volume, context.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + duration + 0.02);
+  }
+
+  function playWinSound() {
+    [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+      window.setTimeout(() => playTone(frequency, 0.12, 0.1, "triangle"), index * 90);
+    });
+  }
+
+  function scheduleSpinTicks() {
+    let elapsed = 0;
+    let interval = 42;
+    while (elapsed < spinDurationMs - 250) {
+      const time = elapsed;
+      window.setTimeout(() => {
+        const pitch = Math.max(160, 520 - time / 13);
+        playTone(pitch, 0.035, 0.045, "square");
+      }, time);
+      elapsed += interval;
+      interval = Math.min(interval * 1.055, 520);
+    }
+  }
 
   function updateSettings(next: Partial<AppSettings>) {
     setData((current) => ({
@@ -115,7 +166,10 @@ export default function App() {
     const delta = spinDelta(segments[chosen], rotation);
     setSpinning(true);
     setWinnerIndex(null);
+    setWinnerEntry(null);
     setRotation((current) => current + delta);
+    void audioContext()?.resume();
+    scheduleSpinTicks();
 
     window.setTimeout(() => {
       const winner = entries[chosen];
@@ -128,8 +182,10 @@ export default function App() {
       };
 
       setWinnerIndex(chosen);
+      setWinnerEntry(winner);
       setLastWinner(winner.label);
       setSpinning(false);
+      playWinSound();
       setData((current) => ({
         ...current,
         history: [result, ...current.history].slice(0, 50),
@@ -142,6 +198,14 @@ export default function App() {
           : current.lists,
       }));
     }, spinDurationMs);
+  }
+
+  function clearHistory() {
+    if (!selectedList) return;
+    setData((current) => ({
+      ...current,
+      history: current.history.filter((result) => result.listId !== selectedList.id),
+    }));
   }
 
   function exportList() {
@@ -171,11 +235,41 @@ export default function App() {
     updateList(selectedList.id, { entries: [...selectedList.entries, ...entriesToAdd] });
   }
 
+  if (screen === "home") {
+    return (
+      <main className="mode-screen">
+        <section className="mode-hero">
+          <div>
+            <p>SpinFlipRoll</p>
+            <h1>Choose your picker</h1>
+          </div>
+        </section>
+
+        <section className="mode-grid" aria-label="Picker modes">
+          <button className="mode-card wheel-mode" onClick={() => setScreen("wheel")}>
+            <span>Wheel</span>
+            <strong>Spin a custom decision wheel</strong>
+          </button>
+          <button className="mode-card disabled" disabled>
+            <span>Coin</span>
+            <strong>Coming soon</strong>
+          </button>
+          <button className="mode-card disabled" disabled>
+            <span>Dice</span>
+            <strong>Coming soon</strong>
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="app">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">SFR</span>
+          <button className="brand-mark" onClick={() => setScreen("home")} aria-label="Back to picker modes">
+            SFR
+          </button>
           <div>
             <h1>SpinFlipRoll</h1>
             <p>{data.lists.length} wheel{data.lists.length === 1 ? "" : "s"}</p>
@@ -220,6 +314,7 @@ export default function App() {
             aria-label="Wheel name"
           />
           <div className="top-actions">
+            <button onClick={() => setScreen("home")}>Modes</button>
             <label className="file-button">
               Import
               <input
@@ -317,7 +412,12 @@ export default function App() {
           </section>
 
           <section className="history">
-            <h2>History</h2>
+            <div className="history-header">
+              <h2>History</h2>
+              <button onClick={clearHistory} disabled={listHistory.length === 0}>
+                Clear
+              </button>
+            </div>
             {listHistory.length === 0 ? (
               <p>No spins yet</p>
             ) : (
@@ -333,6 +433,33 @@ export default function App() {
           </section>
         </div>
       </section>
+
+      {winnerEntry && (
+        <div className="win-overlay" role="dialog" aria-modal="true" aria-label="Winner">
+          <div className="confetti" aria-hidden="true">
+            {Array.from({ length: 42 }).map((_, index) => (
+              <i
+                key={index}
+                style={
+                  {
+                    "--hue": index * 37,
+                    "--x": `${(index * 23) % 100}%`,
+                    "--drift": `${((index % 7) - 3) * 18}px`,
+                    "--duration": `${2.3 + (index % 8) * 0.18}s`,
+                    "--delay": `${(index % 10) * -0.22}s`,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+          <section className="win-card">
+            <p>Winner</p>
+            <span style={{ backgroundColor: `#${winnerEntry.colorHex}` }} />
+            <h2>{winnerEntry.label}</h2>
+            <button onClick={() => setWinnerEntry(null)}>Done</button>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
