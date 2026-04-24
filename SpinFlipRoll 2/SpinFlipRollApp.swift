@@ -1,23 +1,14 @@
-//
-//  SpinFlipRollApp.swift
-//  SpinFlipRoll
-//
-//  Created by Alexander Holowinski on 9/1/2026.
-//
-
+// SpinFlipRollApp.swift — iOS target
 import SwiftUI
 import SwiftData
 
 @main
 struct SpinFlipRollApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        let schema = Schema([WheelList.self, WheelEntry.self, SpinResult.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
