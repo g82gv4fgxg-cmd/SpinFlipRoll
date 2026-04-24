@@ -259,11 +259,17 @@ button.brand-mark {
 .title-input,
 .entry-row input {
   width: 100%;
-  border: 1px solid #d8d0c5;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(7, 11, 22, 0.72);
   padding: 10px 12px;
-  color: #272421;
+  color: #eef4ff;
+}
+
+.list-create input::placeholder,
+.entry-add input::placeholder,
+.entry-row input::placeholder {
+  color: #8d98aa;
 }
 
 .list-create button,
@@ -490,9 +496,10 @@ button.brand-mark {
   align-items: center;
   gap: 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(7, 11, 22, 0.78);
+  color: #eef4ff;
   padding: 12px 16px;
-  box-shadow: 0 10px 24px rgba(39, 36, 33, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
 .winner-banner span {
@@ -520,7 +527,8 @@ button.brand-mark {
   width: min(420px, 100%);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 22px;
-  background: rgba(255, 250, 242, 0.96);
+  background: rgba(12, 18, 32, 0.96);
+  color: #eef4ff;
   padding: 34px 28px;
   text-align: center;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
@@ -540,7 +548,7 @@ button.brand-mark {
 
 .win-card p {
   margin: 0 0 12px;
-  color: #746c63;
+  color: #9aa8bd;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0;
@@ -560,6 +568,7 @@ button.brand-mark {
   overflow-wrap: anywhere;
   font-size: clamp(2rem, 10vw, 4.2rem);
   line-height: 1;
+  color: #ffffff;
 }
 
 .win-card button {
@@ -783,6 +792,21 @@ button.brand-mark {
   color: #172033;
 }
 
+.theme-light .list-create input,
+.theme-light .entry-add input,
+.theme-light .title-input,
+.theme-light .entry-row input {
+  border-color: #d8d0c5;
+  background: rgba(255, 255, 255, 0.92);
+  color: #272421;
+}
+
+.theme-light .list-create input::placeholder,
+.theme-light .entry-add input::placeholder,
+.theme-light .entry-row input::placeholder {
+  color: #7a8494;
+}
+
 .theme-light .wheel-panel,
 .theme-light .controls,
 .theme-light .history {
@@ -816,6 +840,19 @@ button.brand-mark {
 
 .theme-light .winner-banner {
   background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+}
+
+.theme-light .win-card {
+  background: rgba(255, 250, 242, 0.96);
+  color: #172033;
+}
+
+.theme-light .win-card p {
+  color: #746c63;
+}
+
+.theme-light .win-card h2 {
   color: #172033;
 }
 
