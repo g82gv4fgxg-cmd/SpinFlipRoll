@@ -9,8 +9,9 @@ type CoinProps = {
 
 export default function Coin({ sides, rotation, flipping }: CoinProps) {
   return (
-    <div className="coin-stage" aria-live="polite">
-      <div className={`coin ${flipping ? "flipping" : ""}`} style={{ transform: `rotateX(${rotation}deg)` }}>
+    <div className={`coin-stage ${flipping ? "tossing" : ""}`} aria-live="polite">
+      <div className="coin-shadow" aria-hidden="true" />
+      <div className={`coin ${flipping ? "flipping" : ""}`} style={{ transform: `rotateY(${rotation}deg)` }}>
         <CoinFace side={sides[0]} className="coin-front" />
         <CoinFace side={sides[1]} className="coin-back" />
       </div>

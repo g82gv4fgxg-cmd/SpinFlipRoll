@@ -540,12 +540,71 @@ button.brand-mark {
 }
 
 .coin-stage {
+  position: relative;
   display: grid;
   place-items: center;
   width: min(70vw, 400px);
   max-width: 100%;
   aspect-ratio: 1;
   perspective: 1200px;
+  transform-origin: 50% 82%;
+}
+
+.coin-stage.tossing {
+  animation: coin-toss 2.1s cubic-bezier(0.16, 0.86, 0.24, 1) both;
+}
+
+@keyframes coin-toss {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  18% {
+    transform: translateY(-86px) scale(0.82);
+  }
+  52% {
+    transform: translateY(-132px) scale(0.66);
+  }
+  78% {
+    transform: translateY(-42px) scale(0.88);
+  }
+  92% {
+    transform: translateY(10px) scale(1.04);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.coin-shadow {
+  position: absolute;
+  bottom: 11%;
+  width: 48%;
+  height: 12%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.24);
+  filter: blur(16px);
+  transform: scale(0.92);
+  animation: none;
+}
+
+.coin-stage.tossing .coin-shadow {
+  animation: coin-shadow-toss 2.1s cubic-bezier(0.16, 0.86, 0.24, 1) both;
+}
+
+@keyframes coin-shadow-toss {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(0.92);
+  }
+  52% {
+    opacity: 0.22;
+    transform: scale(0.46);
+  }
+  92% {
+    opacity: 0.92;
+    transform: scale(1.06);
+  }
 }
 
 .coin {
@@ -553,7 +612,8 @@ button.brand-mark {
   width: min(86%, 330px);
   aspect-ratio: 1;
   transform-style: preserve-3d;
-  transition: transform 1.9s cubic-bezier(0.12, 0.74, 0.18, 1);
+  transition: transform 2.1s cubic-bezier(0.12, 0.74, 0.18, 1);
+  will-change: transform;
 }
 
 .coin.flipping {
@@ -574,10 +634,15 @@ button.brand-mark {
     var(--coin-color);
   color: #ffffff;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   box-shadow:
     inset -24px -28px 46px rgba(0, 0, 0, 0.18),
     inset 14px 14px 26px rgba(255, 255, 255, 0.22),
     0 28px 80px rgba(0, 0, 0, 0.34);
+}
+
+.coin-front {
+  transform: translateZ(7px);
 }
 
 .coin-face::before {
@@ -601,7 +666,7 @@ button.brand-mark {
 }
 
 .coin-back {
-  transform: rotateX(180deg);
+  transform: rotateY(180deg) translateZ(7px);
 }
 
 .coin-result {

@@ -7,7 +7,7 @@ import { loadData, saveData } from "./storage";
 import type { AppData, AppSettings, CoinFlipResult, CoinSet, CoinSide, SpinResult, WheelEntry, WheelList } from "./types";
 
 const spinDurationMs = 4400;
-const coinFlipDurationMs = 1900;
+const coinFlipDurationMs = 2100;
 type Screen = "home" | "wheel" | "coin";
 type Theme = "dark" | "light";
 
@@ -292,8 +292,8 @@ export default function App() {
     const chosen = Math.random() < 0.5 ? 0 : 1;
     const normalized = ((coinRotation % 360) + 360) % 360;
     const target = chosen === 0 ? 0 : 180;
-    let delta = 360 * 6 + target - normalized;
-    if (delta < 360 * 5) delta += 360;
+    let delta = 360 * 8 + target - normalized;
+    if (delta < 360 * 7) delta += 360;
 
     setCoinFlipping(true);
     setCoinWinnerIndex(null);
