@@ -11,6 +11,7 @@ type Screen = "home" | "wheel";
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadData());
   const [screen, setScreen] = useState<Screen>("home");
+  const [isEnteringWheel, setIsEnteringWheel] = useState(false);
   const [selectedListId, setSelectedListId] = useState(() => data.lists[0]?.id ?? "");
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -86,6 +87,33 @@ export default function App() {
       ...current,
       settings: { ...current.settings, ...next },
     }));
+  }
+
+  function openWheel() {
+    if (isEnteringWheel) return;
+    setIsEnteringWheel(true);
+    window.setTimeout(() => {
+      setScreen("wheel");
+      setIsEnteringWheel(false);
+    }, 620);
+  }
+
+  function showHome() {
+    setScreen("home");
+    setWinnerEntry(null);
+    setWinnerIndex(null);
+    setIsEnteringWheel(false);
+  }
+
+  function closeWinner() {
+    setWinnerEntry(null);
+  }
+
+  function removeWinner() {
+    if (!winnerEntry || !selectedList) return;
+    removeEntry(winnerEntry.id);
+    setWinnerEntry(null);
+    setWinnerIndex(null);
   }
 
   function addList() {
@@ -237,7 +265,7 @@ export default function App() {
 
   if (screen === "home") {
     return (
-      <main className="mode-screen">
+      <main className={`mode-screen ${isEnteringWheel ? "launching" : ""}`}>
         <section className="mode-hero">
           <div>
             <p>SpinFlipRoll</p>
@@ -246,7 +274,8 @@ export default function App() {
         </section>
 
         <section className="mode-grid" aria-label="Picker modes">
-          <button className="mode-card wheel-mode" onClick={() => setScreen("wheel")}>
+          <button className="mode-card wheel-mode" onClick={openWheel}>
+            <i aria-hidden="true" />
             <span>Wheel</span>
             <strong>Spin a custom decision wheel</strong>
           </button>
@@ -264,10 +293,10 @@ export default function App() {
   }
 
   return (
-    <main className="app">
+    <main className="app wheel-app">
       <aside className="sidebar">
         <div className="brand">
-          <button className="brand-mark" onClick={() => setScreen("home")} aria-label="Back to picker modes">
+          <button className="brand-mark" onClick={showHome} aria-label="Back to picker modes">
             SFR
           </button>
           <div>
@@ -314,7 +343,7 @@ export default function App() {
             aria-label="Wheel name"
           />
           <div className="top-actions">
-            <button onClick={() => setScreen("home")}>Modes</button>
+            <button onClick={showHome}>Modes</button>
             <label className="file-button">
               Import
               <input
@@ -374,6 +403,10 @@ export default function App() {
           </section>
 
           <section className="controls">
+            <div className="panel-heading">
+              <h2>Options</h2>
+              <span>{entries.length}</span>
+            </div>
             <div className="entry-add">
               <input
                 value={newEntry}
@@ -456,7 +489,10 @@ export default function App() {
             <p>Winner</p>
             <span style={{ backgroundColor: `#${winnerEntry.colorHex}` }} />
             <h2>{winnerEntry.label}</h2>
-            <button onClick={() => setWinnerEntry(null)}>Done</button>
+            <div className="win-actions">
+              <button onClick={closeWinner}>Done</button>
+              <button className="remove-winner" onClick={removeWinner}>Remove</button>
+            </div>
           </section>
         </div>
       )}
