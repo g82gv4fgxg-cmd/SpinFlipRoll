@@ -15,6 +15,17 @@ export const defaultData: AppData = {
     },
   ],
   history: [],
+  coinSets: [
+    {
+      id: crypto.randomUUID(),
+      name: "Classic Coin",
+      sides: [
+        { id: crypto.randomUUID(), label: "Heads", colorHex: "E8C44A" },
+        { id: crypto.randomUUID(), label: "Tails", colorHex: "5B8AC4" },
+      ],
+    },
+  ],
+  coinHistory: [],
   settings: {
     weighted: false,
     noRepeat: false,
@@ -32,6 +43,8 @@ export function loadData(): AppData {
     return {
       lists: data.lists?.length ? data.lists : defaultData.lists,
       history: data.history ?? [],
+      coinSets: data.coinSets?.length ? data.coinSets : defaultData.coinSets,
+      coinHistory: data.coinHistory ?? [],
       settings: { ...defaultData.settings, ...data.settings },
     };
   } catch {

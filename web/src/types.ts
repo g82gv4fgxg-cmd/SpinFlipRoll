@@ -19,6 +19,26 @@ export type SpinResult = {
   timestamp: string;
 };
 
+export type CoinSide = {
+  id: string;
+  label: string;
+  colorHex: string;
+};
+
+export type CoinSet = {
+  id: string;
+  name: string;
+  sides: [CoinSide, CoinSide];
+};
+
+export type CoinFlipResult = {
+  id: string;
+  label: string;
+  coinId: string;
+  coinName: string;
+  timestamp: string;
+};
+
 export type AppSettings = {
   weighted: boolean;
   noRepeat: boolean;
@@ -29,5 +49,7 @@ export type AppSettings = {
 export type AppData = {
   lists: WheelList[];
   history: SpinResult[];
+  coinSets: CoinSet[];
+  coinHistory: CoinFlipResult[];
   settings: AppSettings;
 };
