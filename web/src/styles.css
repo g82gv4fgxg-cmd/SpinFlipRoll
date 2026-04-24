@@ -46,6 +46,8 @@ button:disabled {
   z-index: 1;
   display: flex;
   align-items: end;
+  justify-content: space-between;
+  gap: 18px;
   min-height: 34vh;
   padding: 42px clamp(18px, 6vw, 72px);
   background:
@@ -54,6 +56,19 @@ button:disabled {
   background-position: center;
   background-size: cover;
   color: #ffffff;
+}
+
+.theme-toggle {
+  white-space: nowrap;
+}
+
+.mode-hero .theme-toggle {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  padding: 11px 16px;
+  font-weight: 800;
+  backdrop-filter: blur(14px);
 }
 
 .mode-hero p {
@@ -700,6 +715,119 @@ button.brand-mark {
   font-size: 0.9rem;
 }
 
+.theme-light.mode-screen {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(91, 138, 196, 0.2), transparent 30%),
+    radial-gradient(circle at 74% 10%, rgba(232, 196, 74, 0.24), transparent 26%),
+    linear-gradient(145deg, #f6f2ea 0%, #e9f0f7 54%, #fdfbf6 100%);
+  color: #172033;
+}
+
+.theme-light .mode-hero {
+  background:
+    linear-gradient(rgba(19, 28, 43, 0.42), rgba(19, 28, 43, 0.26)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='420' viewBox='0 0 1200 420'%3E%3Crect width='1200' height='420' fill='%235b8ac4'/%3E%3Ccircle cx='180' cy='210' r='150' fill='%23d4756a'/%3E%3Cpath d='M180 210 L180 60 A150 150 0 0 1 330 210 Z' fill='%23e8c44a'/%3E%3Cpath d='M180 210 L330 210 A150 150 0 0 1 180 360 Z' fill='%235baa7c'/%3E%3Cpath d='M180 210 L180 360 A150 150 0 0 1 30 210 Z' fill='%238b6fbf'/%3E%3Ccircle cx='180' cy='210' r='36' fill='%23fffaf2'/%3E%3Crect x='470' y='80' width='145' height='145' rx='28' fill='%23fffaf2' opacity='.92'/%3E%3Ccircle cx='542' cy='153' r='26' fill='%23262a30'/%3E%3Crect x='750' y='76' width='150' height='150' rx='24' fill='%23fffaf2' opacity='.88'/%3E%3Ccircle cx='790' cy='116' r='12' fill='%23262a30'/%3E%3Ccircle cx='860' cy='116' r='12' fill='%23262a30'/%3E%3Ccircle cx='825' cy='151' r='12' fill='%23262a30'/%3E%3Ccircle cx='790' cy='186' r='12' fill='%23262a30'/%3E%3Ccircle cx='860' cy='186' r='12' fill='%23262a30'/%3E%3C/svg%3E");
+  background-position: center;
+  background-size: cover;
+}
+
+.theme-light .mode-hero .theme-toggle {
+  background: rgba(255, 255, 255, 0.78);
+  color: #172033;
+}
+
+.theme-light .mode-card {
+  border-color: rgba(23, 32, 51, 0.12);
+  box-shadow: 0 24px 70px rgba(46, 56, 74, 0.16);
+}
+
+.theme-light .mode-card.disabled {
+  background: rgba(172, 178, 188, 0.34);
+  color: #566172;
+}
+
+.theme-light.app {
+  background:
+    radial-gradient(circle at 32% 18%, rgba(91, 138, 196, 0.18), transparent 30%),
+    linear-gradient(145deg, #f6f2ea 0%, #eef4f8 100%);
+  color: #172033;
+}
+
+.theme-light .sidebar {
+  border-right-color: rgba(23, 32, 51, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  color: #172033;
+}
+
+.theme-light .brand p,
+.theme-light .history p {
+  color: #657185;
+}
+
+.theme-light .wheel-list button {
+  color: #172033;
+}
+
+.theme-light .wheel-list button:hover,
+.theme-light .wheel-list .selected {
+  background: rgba(23, 32, 51, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.08);
+}
+
+.theme-light .wheel-list small {
+  color: #657185;
+}
+
+.theme-light .workspace,
+.theme-light .title-input {
+  color: #172033;
+}
+
+.theme-light .wheel-panel,
+.theme-light .controls,
+.theme-light .history {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(23, 32, 51, 0.1);
+  box-shadow: 0 20px 54px rgba(46, 56, 74, 0.14);
+}
+
+.theme-light .chips button,
+.theme-light .history-header button,
+.theme-light .icon-button,
+.theme-light .panel-heading span {
+  background: rgba(23, 32, 51, 0.08);
+  color: #172033;
+}
+
+.theme-light .chips .on {
+  background: linear-gradient(145deg, #5baa7c, #5b8ac4);
+  color: #ffffff;
+}
+
+.theme-light .pointer {
+  color: #172033;
+  text-shadow: 0 4px 18px rgba(255, 255, 255, 0.56);
+}
+
+.theme-light .empty-wheel {
+  background: rgba(23, 32, 51, 0.08);
+  color: #657185;
+}
+
+.theme-light .winner-banner {
+  background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+}
+
+.theme-light .panel-heading span,
+.theme-light .history time {
+  color: #657185;
+}
+
+.theme-light .history li {
+  border-bottom-color: rgba(23, 32, 51, 0.1);
+}
+
 @media (max-width: 900px) {
   .mode-grid {
     grid-template-columns: 1fr;
@@ -715,6 +843,11 @@ button.brand-mark {
 
   .sidebar {
     padding: 18px;
+  }
+
+  .mode-hero {
+    align-items: start;
+    flex-direction: column;
   }
 
   .topbar,

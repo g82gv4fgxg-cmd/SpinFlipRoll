@@ -7,10 +7,12 @@ import type { AppData, AppSettings, SpinResult, WheelEntry, WheelList } from "./
 
 const spinDurationMs = 4400;
 type Screen = "home" | "wheel";
+type Theme = "dark" | "light";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadData());
   const [screen, setScreen] = useState<Screen>("home");
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("spinfliproll:theme") === "light" ? "light" : "dark"));
   const [isEnteringWheel, setIsEnteringWheel] = useState(false);
   const [selectedListId, setSelectedListId] = useState(() => data.lists[0]?.id ?? "");
   const [rotation, setRotation] = useState(0);
@@ -23,6 +25,7 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => saveData(data), [data]);
+  useEffect(() => localStorage.setItem("spinfliproll:theme", theme), [theme]);
 
   const selectedList = useMemo(
     () => data.lists.find((list) => list.id === selectedListId) ?? data.lists[0],
@@ -30,11 +33,20 @@ export default function App() {
   );
 
   const entries = selectedList?.entries ?? [];
+  const displayedEntries = useMemo(
+    () => entries.map((entry) => ({ ...entry, colorHex: theme === "dark" ? darkenHex(entry.colorHex, 0.74) : entry.colorHex })),
+    [entries, theme]
+  );
   const segments = useMemo(
     () => buildSegments(entries, data.settings.weighted),
     [entries, data.settings.weighted]
   );
   const listHistory = data.history.filter((result) => result.listId === selectedList?.id).slice(0, 8);
+  const themeLabel = theme === "dark" ? "Light mode" : "Dark mode";
+
+  function toggleTheme() {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
 
   function audioContext() {
     const AudioContextConstructor =
@@ -265,12 +277,15 @@ export default function App() {
 
   if (screen === "home") {
     return (
-      <main className={`mode-screen ${isEnteringWheel ? "launching" : ""}`}>
+      <main className={`mode-screen theme-${theme} ${isEnteringWheel ? "launching" : ""}`}>
         <section className="mode-hero">
           <div>
             <p>SpinFlipRoll</p>
             <h1>Choose your picker</h1>
           </div>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={themeLabel}>
+            {themeLabel}
+          </button>
         </section>
 
         <section className="mode-grid" aria-label="Picker modes">
@@ -293,7 +308,7 @@ export default function App() {
   }
 
   return (
-    <main className="app wheel-app">
+    <main className={`app wheel-app theme-${theme}`}>
       <aside className="sidebar">
         <div className="brand">
           <button className="brand-mark" onClick={showHome} aria-label="Back to picker modes">
@@ -343,6 +358,9 @@ export default function App() {
             aria-label="Wheel name"
           />
           <div className="top-actions">
+            <button className="theme-toggle" onClick={toggleTheme} aria-label={themeLabel}>
+              {themeLabel}
+            </button>
             <button onClick={showHome}>Modes</button>
             <label className="file-button">
               Import
@@ -388,7 +406,7 @@ export default function App() {
               </button>
             </div>
 
-            <Wheel entries={entries} segments={segments} rotation={rotation} winnerIndex={winnerIndex} />
+            <Wheel entries={displayedEntries} segments={segments} rotation={rotation} winnerIndex={winnerIndex} />
 
             <button className="spin-button" onClick={spin} disabled={spinning || entries.length < 2}>
               {spinning ? "Spinning..." : "Spin"}
@@ -396,7 +414,7 @@ export default function App() {
 
             {winnerIndex !== null && entries[winnerIndex] && (
               <div className="winner-banner">
-                <span style={{ backgroundColor: `#${entries[winnerIndex].colorHex}` }} />
+                <span style={{ backgroundColor: `#${displayedEntries[winnerIndex].colorHex}` }} />
                 <strong>{entries[winnerIndex].label}</strong>
               </div>
             )}
@@ -487,7 +505,7 @@ export default function App() {
           </div>
           <section className="win-card">
             <p>Winner</p>
-            <span style={{ backgroundColor: `#${winnerEntry.colorHex}` }} />
+            <span style={{ backgroundColor: `#${theme === "dark" ? darkenHex(winnerEntry.colorHex, 0.74) : winnerEntry.colorHex}` }} />
             <h2>{winnerEntry.label}</h2>
             <div className="win-actions">
               <button onClick={closeWinner}>Done</button>
@@ -498,4 +516,13 @@ export default function App() {
       )}
     </main>
   );
+}
+
+function darkenHex(hex: string, amount: number) {
+  const normalized = hex.replace("#", "");
+  const value = Number.parseInt(normalized.length === 6 ? normalized : "888888", 16);
+  const r = Math.round(((value >> 16) & 255) * amount);
+  const g = Math.round(((value >> 8) & 255) * amount);
+  const b = Math.round((value & 255) * amount);
+  return [r, g, b].map((channel) => channel.toString(16).padStart(2, "0")).join("").toUpperCase();
 }
