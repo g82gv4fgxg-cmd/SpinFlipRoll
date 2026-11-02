@@ -27,3 +27,20 @@ test("Spin Guard can be steered by tapping", async ({ page }) => {
   await page.touchscreen.tap(box.x + box.width * 0.15, box.y + box.height / 2);
   await expect(game).toHaveAttribute("data-step", "-1");
 });
+
+test.describe("with full motion", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  test("opening a mode never makes the page scroll sideways", async ({ page }) => {
+    await freshApp(page);
+    for (const mode of ["Wheel", "Coin", "Dice"] as const) {
+      await page.goto("./");
+      await openMode(page, mode);
+      await page.waitForTimeout(900);
+      // A page that ever grew wider than the screen leaves the layout viewport wider than the visible one.
+      const widths = await page.evaluate(() => ({ layout: window.innerWidth, visible: Math.round(window.visualViewport!.width), scroll: document.documentElement.scrollWidth }));
+      expect(widths.layout, mode).toBe(widths.visible);
+      expect(widths.scroll, mode).toBeLessThanOrEqual(widths.visible);
+    }
+  });
+});
