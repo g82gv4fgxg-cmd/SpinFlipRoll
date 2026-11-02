@@ -1,6 +1,7 @@
 import type {
   AppData,
   AppSettings,
+  ArcadeStats,
   CoinFlipResult,
   CoinSet,
   CoinSide,
@@ -49,6 +50,17 @@ export const defaultSettings: AppSettings = {
   visuals: "auto",
 };
 
+export const startingChips = 1000;
+
+export const defaultArcade: ArcadeStats = {
+  blackjackChips: startingChips,
+  pokerChips: startingChips,
+  coachRight: 0,
+  coachTotal: 0,
+  poolWins: 0,
+  poolLosses: 0,
+};
+
 export function createDefaultData(): AppData {
   const listId = createId();
   const coinId = createId();
@@ -72,6 +84,7 @@ export function createDefaultData(): AppData {
     selectedListId: listId,
     selectedCoinId: coinId,
     gameBest: 0,
+    arcade: { ...defaultArcade },
     settings: { ...defaultSettings },
   };
 }
@@ -104,6 +117,7 @@ export function loadData(): AppData {
     selectedListId: pickId(raw.selectedListId, lists),
     selectedCoinId: pickId(raw.selectedCoinId, coinSets),
     gameBest: typeof raw.gameBest === "number" && Number.isFinite(raw.gameBest) ? Math.max(0, Math.floor(raw.gameBest)) : 0,
+    arcade: toArcade(raw.arcade),
     settings: toSettings(raw.settings),
   };
 }
@@ -281,6 +295,23 @@ function toCoinFlipResult(value: unknown): CoinFlipResult | null {
     coinId: value.coinId,
     coinName: toText(value.coinName) ?? "",
     timestamp,
+  };
+}
+
+function toArcade(value: unknown): ArcadeStats {
+  const arcade = isRecord(value) ? value : {};
+  const count = (key: keyof ArcadeStats) => {
+    const raw = arcade[key];
+    return typeof raw === "number" && Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : defaultArcade[key];
+  };
+  const coachTotal = count("coachTotal");
+  return {
+    blackjackChips: count("blackjackChips"),
+    pokerChips: count("pokerChips"),
+    coachRight: Math.min(count("coachRight"), coachTotal),
+    coachTotal,
+    poolWins: count("poolWins"),
+    poolLosses: count("poolLosses"),
   };
 }
 

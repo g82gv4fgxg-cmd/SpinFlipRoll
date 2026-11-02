@@ -66,6 +66,17 @@ export type AppSettings = {
   visuals: "auto" | "enhanced" | "classic";
 };
 
+/** Progress in the Games room. Chips are play money only. */
+export type ArcadeStats = {
+  blackjackChips: number;
+  pokerChips: number;
+  /** Blackjack decisions that matched basic strategy, out of all decisions. */
+  coachRight: number;
+  coachTotal: number;
+  poolWins: number;
+  poolLosses: number;
+};
+
 export type AppData = {
   lists: WheelList[];
   history: SpinResult[];
@@ -76,5 +87,6 @@ export type AppData = {
   selectedListId: string;
   selectedCoinId: string;
   gameBest: number;
+  arcade: ArcadeStats;
   settings: AppSettings;
 };

@@ -92,6 +92,32 @@ export const sounds = {
   gamePowerUp(later: Scheduler) {
     arpeggio(later, [660, 880, 1320], 50, 0.08, 0.08);
   },
+  /** A pool ball click, louder for harder hits. */
+  poolClick(speed: number) {
+    playTone(1500 + Math.random() * 500, 0.018, Math.min(0.12, 0.012 + speed / 50000), "square");
+  },
+  poolCushion(speed: number) {
+    playTone(110 + Math.random() * 30, 0.07, Math.min(0.12, 0.01 + speed / 45000), "sine");
+  },
+  poolPocket(later: Scheduler) {
+    playTone(220, 0.06, 0.09, "triangle");
+    later(() => playTone(150, 0.1, 0.08, "sine"), 60);
+  },
+  poolStrike(power: number) {
+    playTone(900, 0.03, 0.03 + power * 0.08, "square");
+  },
+  cardDeal() {
+    playTone(2400 + Math.random() * 600, 0.025, 0.035, "triangle");
+  },
+  chips() {
+    playTone(1800, 0.03, 0.05, "square");
+  },
+  handWin(later: Scheduler) {
+    arpeggio(later, [523.25, 659.25, 783.99], 70, 0.09, 0.08);
+  },
+  handLose() {
+    playTone(196, 0.18, 0.07, "triangle");
+  },
   unlock(later: Scheduler) {
     arpeggio(later, [392, 523.25, 659.25, 783.99, 1046.5], 80, 0.14, 0.1);
   },

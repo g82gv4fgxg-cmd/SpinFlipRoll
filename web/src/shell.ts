@@ -2,7 +2,11 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Theme } from "./storage";
 import type { AppData } from "./types";
 
-export type Screen = "home" | "wheel" | "coin" | "dice" | "game";
+export type Screen = "home" | "wheel" | "coin" | "dice" | "arcade" | "blackjack" | "poker" | "pool" | "spinguard";
+
+/** Screens inside the secret Games room. */
+export type GameScreen = "blackjack" | "poker" | "pool" | "spinguard";
+export const lockedScreens: Screen[] = ["arcade", "blackjack", "poker", "pool", "spinguard"];
 
 /** App-wide controls every screen can use. */
 export type Shell = {

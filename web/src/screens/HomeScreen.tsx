@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import Icon from "../components/Icon";
 import { useTimers } from "../hooks";
-import type { Screen, Shell } from "../shell";
+import type { Shell } from "../shell";
 
-type Mode = Exclude<Screen, "home">;
+type Mode = "wheel" | "coin" | "dice" | "arcade";
 
 type HomeScreenProps = {
   shell: Shell;
@@ -36,7 +36,7 @@ export default function HomeScreen({ shell, secretUnlocked, canInstall, onInstal
   /** The secret: tap the small "SpinFlipRoll" title seven times in a row. */
   function tapTitle() {
     if (secretUnlocked) {
-      shell.toast("Spin Guard is already unlocked. It's the last card.");
+      shell.toast("The Games room is already unlocked. It's the last card.");
       return;
     }
     const now = Date.now();
@@ -104,10 +104,10 @@ export default function HomeScreen({ shell, secretUnlocked, canInstall, onInstal
           <strong>Roll up to six dice, d4 to d20</strong>
         </button>
         {secretUnlocked ? (
-          <button className="mode-card secret-mode unlocked" onClick={() => open("game")}>
+          <button className="mode-card secret-mode unlocked" onClick={() => open("arcade")}>
             <i aria-hidden="true" />
-            <span>Spin Guard</span>
-            <strong>Secret game: guard the wheel</strong>
+            <span>Games room</span>
+            <strong>Learn blackjack, poker and pool, plus Spin Guard</strong>
           </button>
         ) : (
           <button className={`mode-card secret-mode locked${shaking ? " shake" : ""}`} onClick={lockedHint} aria-label="Locked secret">

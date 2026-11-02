@@ -58,7 +58,7 @@ test("works when storage is blocked and crypto.randomUUID is missing", async ({ 
 
 test("nothing scrolls sideways at common screen widths", async ({ page }) => {
   await freshApp(page, { settings: { secretUnlocked: true } });
-  for (const screen of ["", "#/wheel", "#/coin", "#/dice", "#/play"]) {
+  for (const screen of ["", "#/wheel", "#/coin", "#/dice", "#/play", "#/play/blackjack", "#/play/poker", "#/play/pool"]) {
     await page.goto(`./${screen}`);
     for (const width of [360, 768, 950, 1280]) {
       await page.setViewportSize({ width, height: 800 });

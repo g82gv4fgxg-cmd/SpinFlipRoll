@@ -1,4 +1,18 @@
-export type IconName = "sparkles" | "sound-on" | "sound-off" | "sun" | "moon" | "expand" | "close" | "lock" | "left" | "right" | "pause";
+export type IconName =
+  | "sparkles"
+  | "sound-on"
+  | "sound-off"
+  | "sun"
+  | "moon"
+  | "expand"
+  | "close"
+  | "lock"
+  | "left"
+  | "right"
+  | "pause"
+  | "book"
+  | "up"
+  | "down";
 
 const paths: Record<IconName, string> = {
   sparkles: "M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z M5 15.5l.6 1.4 1.4.6-1.4.6L5 19.5l-.6-1.4-1.4-.6 1.4-.6z",
@@ -12,6 +26,9 @@ const paths: Record<IconName, string> = {
   left: "M15 5l-7 7 7 7",
   right: "M9 5l7 7-7 7",
   pause: "M9 5v14 M15 5v14",
+  book: "M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5",
+  up: "M5 15l7-7 7 7",
+  down: "M5 9l7 7 7-7",
 };
 
 export default function Icon({ name, size = 20 }: { name: IconName; size?: number }) {

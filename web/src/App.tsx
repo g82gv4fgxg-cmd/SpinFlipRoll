@@ -8,15 +8,20 @@ import { useMediaQuery, useReducedMotion, useTimers } from "./hooks";
 import CoinScreen from "./screens/CoinScreen";
 import DiceScreen from "./screens/DiceScreen";
 import HomeScreen from "./screens/HomeScreen";
+import ArcadeScreen from "./screens/ArcadeScreen";
+import BlackjackScreen from "./screens/BlackjackScreen";
+import PokerScreen from "./screens/PokerScreen";
+import PoolScreen from "./screens/PoolScreen";
 import SpinGuardScreen from "./screens/SpinGuardScreen";
 import WheelScreen from "./screens/WheelScreen";
 import { decodeWheel, sharePayloadFromHash } from "./share";
 import type { SharedWheel } from "./share";
+import { lockedScreens } from "./shell";
 import type { Screen, Shell } from "./shell";
 import { setSoundEnabled, sounds, unlockAudio } from "./sound";
 import { createId, entriesToAdd, loadData, loadThemePreference, saveData, saveTheme } from "./storage";
 import type { Theme } from "./storage";
-import type { AppData } from "./types";
+import type { AppData, ArcadeStats } from "./types";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -27,13 +32,19 @@ const screenHashes: Record<Exclude<Screen, "home">, string> = {
   wheel: "#/wheel",
   coin: "#/coin",
   dice: "#/dice",
-  game: "#/play",
+  arcade: "#/play",
+  blackjack: "#/play/blackjack",
+  poker: "#/play/poker",
+  pool: "#/play/pool",
+  spinguard: "#/play/spin-guard",
 };
 
 function screenFromHash(hash: string): Screen {
   const match = (Object.keys(screenHashes) as (keyof typeof screenHashes)[]).find((screen) => screenHashes[screen] === hash);
   return match ?? "home";
 }
+
+const urlFor = (screen: Screen) => (screen === "home" ? `${location.pathname}${location.search}` : screenHashes[screen]);
 
 export default function App() {
   const [data, setData] = useState<AppData>(loadData);
@@ -116,30 +127,36 @@ export default function App() {
     };
   }, []);
 
-  // The secret game's address does nothing until it's unlocked.
+  // The Games room's addresses do nothing until it's unlocked.
+  const locked = lockedScreens.includes(screen) && !unlocked;
   useEffect(() => {
-    if (screen === "game" && !unlocked) {
-      history.replaceState(null, "", `${location.pathname}${location.search}`);
+    if (locked) {
+      history.replaceState(null, "", urlFor("home"));
       setScreen("home");
     }
-  }, [screen, unlocked]);
+  }, [locked]);
 
-  function navigate(next: Screen, fromHome = false) {
-    const url = next === "home" ? `${location.pathname}${location.search}` : screenHashes[next];
-    history.pushState({ fromHome }, "", url);
+  /** Opens a screen. `from` is remembered so going back can step back through history instead of piling up entries. */
+  function navigate(next: Screen, from: Screen | null = null) {
+    history.pushState({ from }, "", urlFor(next));
     showScreen(next);
   }
 
-  /** Back to the picker. If we came from it, step back in history so the back button doesn't loop. */
-  function goHome() {
-    const state = history.state as { fromHome?: boolean } | null;
-    if (state?.fromHome) {
+  /** Back to a parent screen (the picker or the Games room). */
+  function goBackTo(target: Screen) {
+    const state = history.state as { from?: Screen | null } | null;
+    if (state?.from === target) {
       history.back();
     } else {
-      history.replaceState(null, "", `${location.pathname}${location.search}`);
-      showScreen("home");
+      history.replaceState(null, "", urlFor(target));
+      showScreen(target);
     }
   }
+
+  const goHome = () => goBackTo("home");
+  const toArcade = () => goBackTo("arcade");
+  const setArcade = (update: (current: ArcadeStats) => Partial<ArcadeStats>) =>
+    setData((current) => ({ ...current, arcade: { ...current.arcade, ...update(current.arcade) } }));
 
   function toggleEnhanced() {
     const next = !enhanced;
@@ -164,7 +181,7 @@ export default function App() {
     setData((current) => ({ ...current, settings: { ...current.settings, secretUnlocked: true } }));
     unlockAudio();
     sounds.unlock(later);
-    showToast("You found the secret! Spin Guard is unlocked.");
+    showToast("You found the secret! The Games room is unlocked.");
   }
 
   async function install() {
@@ -178,7 +195,7 @@ export default function App() {
     const list = { id: createId(), name: incoming.name, entries: entriesToAdd([], incoming.entries) };
     setData((current) => ({ ...current, lists: [...current.lists, list], selectedListId: list.id }));
     setIncoming(null);
-    navigate("wheel", screen === "home");
+    navigate("wheel", screen === "home" ? "home" : null);
     showToast(`Added "${list.name}"`);
   }
 
@@ -198,11 +215,18 @@ export default function App() {
   if (screen === "wheel") content = <WheelScreen data={data} setData={setData} shell={shell} />;
   else if (screen === "coin") content = <CoinScreen data={data} setData={setData} shell={shell} />;
   else if (screen === "dice") content = <DiceScreen data={data} setData={setData} shell={shell} />;
-  else if (screen === "game" && unlocked)
+  else if (locked) content = null;
+  else if (screen === "arcade")
+    content = <ArcadeScreen shell={shell} arcade={data.arcade} best={data.gameBest} onOpen={(game) => navigate(game, "arcade")} />;
+  else if (screen === "blackjack") content = <BlackjackScreen shell={shell} arcade={data.arcade} setArcade={setArcade} onBack={toArcade} />;
+  else if (screen === "poker") content = <PokerScreen shell={shell} arcade={data.arcade} setArcade={setArcade} onBack={toArcade} />;
+  else if (screen === "pool") content = <PoolScreen shell={shell} arcade={data.arcade} setArcade={setArcade} onBack={toArcade} />;
+  else if (screen === "spinguard")
     content = (
       <SpinGuardScreen
         shell={shell}
         best={data.gameBest}
+        onBack={toArcade}
         onBest={(score) => setData((current) => ({ ...current, gameBest: Math.max(current.gameBest, score) }))}
       />
     );
@@ -213,7 +237,7 @@ export default function App() {
         secretUnlocked={unlocked}
         canInstall={installPrompt !== null}
         onInstall={install}
-        onOpen={(mode) => navigate(mode, true)}
+        onOpen={(mode) => navigate(mode, "home")}
         onUnlock={unlockSecret}
       />
     );

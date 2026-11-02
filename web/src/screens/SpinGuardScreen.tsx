@@ -10,9 +10,10 @@ type SpinGuardScreenProps = {
   shell: Shell;
   best: number;
   onBest: (score: number) => void;
+  onBack: () => void;
 };
 
-export default function SpinGuardScreen({ shell, best, onBest }: SpinGuardScreenProps) {
+export default function SpinGuardScreen({ shell, best, onBest, onBack }: SpinGuardScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<SpinGuardGame | null>(null);
   const bestRef = useRef(best);
@@ -112,8 +113,8 @@ export default function SpinGuardScreen({ shell, best, onBest }: SpinGuardScreen
       data-step={hud.step}
     >
       <header className="game-bar">
-        <button className="game-back" onClick={shell.goHome}>
-          <Icon name="left" size={18} /> Modes
+        <button className="game-back" onClick={onBack}>
+          <Icon name="left" size={18} /> Games
         </button>
         <h1>Spin Guard</h1>
         <div className="game-stats">
@@ -160,7 +161,7 @@ export default function SpinGuardScreen({ shell, best, onBest }: SpinGuardScreen
 
         {hud.status === "ready" && (
           <div className="game-overlay">
-            <p className="game-kicker">Secret unlocked</p>
+            <p className="game-kicker">Games room</p>
             <h2>Spin Guard</h2>
             <ul className="game-rules">
               <li>Orbs fly at the wheel. Turn it so each orb hits the slice of the same colour.</li>
@@ -192,8 +193,8 @@ export default function SpinGuardScreen({ shell, best, onBest }: SpinGuardScreen
               <button className="game-start" onClick={start} autoFocus>
                 Play again
               </button>
-              <button className="game-secondary" onClick={shell.goHome}>
-                Back to modes
+              <button className="game-secondary" onClick={onBack}>
+                Back to games
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ test("the wheel works by touch on a phone", async ({ page }) => {
 
 test("Spin Guard can be steered by tapping", async ({ page }) => {
   await freshApp(page, { settings: { secretUnlocked: true } });
+  await page.getByRole("button", { name: /^Games room/ }).tap();
   await page.getByRole("button", { name: /^Spin Guard/ }).tap();
   await page.getByRole("button", { name: "Start" }).tap();
   const game = page.locator(".game-screen");
@@ -26,6 +27,22 @@ test("Spin Guard can be steered by tapping", async ({ page }) => {
   await page.touchscreen.tap(box.x + box.width * 0.15, box.y + box.height / 2);
   await page.touchscreen.tap(box.x + box.width * 0.15, box.y + box.height / 2);
   await expect(game).toHaveAttribute("data-step", "-1");
+});
+
+test("the card tables and pool fit a phone and respond to taps", async ({ page }) => {
+  await freshApp(page, { settings: { secretUnlocked: true } });
+  await page.goto("./#/play/blackjack");
+  await page.getByRole("button", { name: "Deal", exact: true }).tap();
+  await expect(page.locator(".blackjack-screen")).not.toHaveAttribute("data-phase", "betting");
+  await page.goto("./#/play/pool");
+  const canvas = page.locator(".pool-canvas");
+  const box = (await canvas.boundingBox())!;
+  // On a tall screen the table stands upright.
+  expect(box.height).toBeGreaterThan(box.width);
+  await page.getByRole("button", { name: "Shoot" }).tap();
+  await expect(page.locator(".pool-screen")).toHaveAttribute("data-shots", "1", { timeout: 30_000 });
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test.describe("with full motion", () => {
