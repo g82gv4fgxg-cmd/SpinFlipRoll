@@ -1,0 +1,9 @@
+# Web app
+web/node_modules/
+web/dist/
+*.tsbuildinfo
+
+# Xcode / macOS
+xcuserdata/
+DerivedData/
+.DS_Store
