@@ -4,6 +4,13 @@
   background: #0b1020;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color: #172033;
+  background: #f6f2ea;
+  color-scheme: light;
 }
 
 * {
@@ -29,6 +36,11 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .mode-screen {
@@ -156,6 +168,12 @@ button:disabled {
   opacity: 0;
   transform: translateY(18px);
   transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.mode-card span,
+.mode-card strong {
+  position: relative;
+  z-index: 1;
 }
 
 .mode-card span {
@@ -350,6 +368,7 @@ button.brand-mark {
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -374,7 +393,16 @@ button.brand-mark {
 
 .file-button {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.file-button.disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .file-button input {
@@ -384,13 +412,17 @@ button.brand-mark {
   cursor: pointer;
 }
 
+.file-button input:disabled {
+  cursor: not-allowed;
+}
+
 .top-actions .danger {
   background: linear-gradient(145deg, #bf6f96, #d4756a);
 }
 
 .main-grid {
   display: grid;
-  grid-template-columns: minmax(360px, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   grid-template-areas:
     "wheel controls"
     "wheel history";
@@ -659,7 +691,7 @@ button.brand-mark {
   max-width: 76%;
   overflow-wrap: anywhere;
   text-align: center;
-  font-size: clamp(2.1rem, 7vw, 4.4rem);
+  font-size: calc(clamp(2.1rem, 7vw, 4.4rem) * var(--label-scale, 1));
   font-weight: 900;
   line-height: 0.94;
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.24);
@@ -672,6 +704,27 @@ button.brand-mark {
 .coin-result {
   min-width: 180px;
   justify-content: center;
+}
+
+.notice {
+  margin: -8px 0 16px;
+  border-radius: 12px;
+  background: rgba(91, 138, 196, 0.18);
+  color: #dbe7fb;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.notice:empty,
+.field-error:empty {
+  display: none;
+}
+
+.field-error {
+  margin: 8px 0 0;
+  color: #f2a7a0;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .winner-banner {
@@ -768,6 +821,17 @@ button.brand-mark {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   width: min(310px, 100%);
+}
+
+.win-actions.single {
+  grid-template-columns: 1fr;
+  width: min(160px, 100%);
+}
+
+.win-note {
+  margin: -12px 0 20px;
+  color: #9aa8bd;
+  font-weight: 700;
 }
 
 .win-card .remove-winner {
@@ -1075,6 +1139,34 @@ button.brand-mark {
   border-bottom-color: rgba(23, 32, 51, 0.1);
 }
 
+.theme-light .notice {
+  background: rgba(91, 138, 196, 0.16);
+  color: #1f3b63;
+}
+
+.theme-light .field-error {
+  color: #b23b31;
+}
+
+.theme-light .win-note {
+  color: #746c63;
+}
+
+/* Two columns stop fitting beside the sidebar below roughly 1020px. */
+@media (max-width: 1100px) {
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "wheel"
+      "controls"
+      "history";
+  }
+
+  .coin-panel {
+    min-height: 480px;
+  }
+}
+
 @media (max-width: 900px) {
   .mode-grid {
     grid-template-columns: 1fr;
@@ -1097,21 +1189,31 @@ button.brand-mark {
     flex-direction: column;
   }
 
-  .topbar,
-  .top-actions {
+  .topbar {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .main-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "wheel"
-      "controls"
-      "history";
+  .top-actions {
+    flex-wrap: wrap;
   }
 
-  .coin-panel {
-    min-height: 480px;
+  .top-actions > * {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app {
+    animation: none;
+  }
+
+  .mode-card,
+  .mode-card i {
+    transition: none;
+  }
+
+  .confetti {
+    display: none;
   }
 }

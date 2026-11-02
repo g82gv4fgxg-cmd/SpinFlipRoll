@@ -20,9 +20,16 @@ export default function Coin({ sides, rotation, flipping }: CoinProps) {
 }
 
 function CoinFace({ side, className }: { side: CoinSide; className: string }) {
+  const style = { "--coin-color": `#${side.colorHex}`, "--label-scale": labelScale(side.label) } as CSSProperties;
   return (
-    <div className={`coin-face ${className}`} style={{ "--coin-color": `#${side.colorHex}` } as CSSProperties}>
+    <div className={`coin-face ${className}`} style={style}>
       <span>{side.label}</span>
     </div>
   );
+}
+
+/** Shrinks longer labels so words fit on the coin instead of breaking mid-word. */
+function labelScale(label: string): number {
+  const longestWord = Math.max(1, ...label.trim().split(/\s+/).map((word) => word.length));
+  return Math.max(0.3, Math.min(1, 5.5 / longestWord, 16 / Math.max(label.length, 1)));
 }
