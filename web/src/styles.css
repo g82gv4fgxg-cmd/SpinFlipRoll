@@ -97,13 +97,15 @@ input:disabled {
 
 .hero-actions {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 
 .mode-hero h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 8vw, 5.4rem);
+  font-size: clamp(2.2rem, 6.4vw, 4.8rem);
   line-height: 0.94;
   text-wrap: balance;
 }
@@ -257,9 +259,10 @@ input:disabled {
 }
 
 @keyframes app-enter {
+  /* Grow in from slightly smaller: growing past 100% widens the page on phones. */
   from {
     opacity: 0;
-    transform: scale(1.03);
+    transform: scale(0.985);
     filter: blur(10px);
   }
   to {
@@ -2436,6 +2439,156 @@ button.secondary {
   .secret-mode.unlocked,
   .secret-mode.unlocked i,
   .die.rolling .die-face {
+    animation: none;
+  }
+}
+
+/* ---------- Enhanced visuals (physics wheel, coin and dice) ---------- */
+
+.physics-wheel {
+  display: block;
+  width: min(78vw, 470px);
+  max-width: 100%;
+  aspect-ratio: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.physics-wheel.grabbable {
+  cursor: grab;
+}
+
+.physics-wheel.grabbable:active {
+  cursor: grabbing;
+}
+
+.physics-coin {
+  display: block;
+  width: 100%;
+  height: clamp(320px, 52vh, 480px);
+}
+
+.dice-table {
+  display: block;
+  width: 100%;
+  height: clamp(280px, 46vh, 460px);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.die-chip {
+  min-width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #eef4ff;
+  font-size: 1.15rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.die-chip:disabled {
+  opacity: 1;
+}
+
+.die-chip.held {
+  background: #f4c531;
+  color: #1b1f2a;
+  box-shadow: 0 0 18px rgba(244, 197, 49, 0.45);
+}
+
+.theme-light .die-chip {
+  background: rgba(23, 32, 51, 0.08);
+  color: #172033;
+}
+
+.confetti-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.visuals-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-hero .visuals-toggle.on {
+  background: linear-gradient(135deg, rgba(162, 116, 234, 0.85), rgba(76, 143, 230, 0.85));
+  color: #ffffff;
+  box-shadow: 0 0 24px rgba(162, 116, 234, 0.45);
+}
+
+.app.presenting .physics-wheel {
+  width: min(80vh, 92vw, 860px);
+}
+
+.app.presenting .physics-coin,
+.app.presenting .dice-table {
+  height: 72vh;
+}
+
+/* A slow, soft aurora behind the panels, inside its own clipping box so it can't widen the page. */
+.app.enhanced {
+  position: relative;
+  isolation: isolate;
+}
+
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora i {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(38% 32% at 22% 28%, rgba(91, 138, 196, 0.3), transparent 70%),
+    radial-gradient(32% 28% at 78% 22%, rgba(212, 117, 106, 0.24), transparent 70%),
+    radial-gradient(40% 34% at 62% 82%, rgba(91, 170, 124, 0.22), transparent 70%);
+  animation: aurora 26s ease-in-out infinite alternate;
+}
+
+.theme-light .aurora {
+  opacity: 0.55;
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(3%, -2%, 0) rotate(7deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-3%, 2%, 0) rotate(-6deg) scale(1.04);
+  }
+}
+
+/* Cross-fade between screens (View Transitions API, enhanced mode only). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora i {
     animation: none;
   }
 }

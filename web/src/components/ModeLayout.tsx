@@ -33,7 +33,14 @@ export default function ModeLayout({
   useEscapeKey(presenter.exit, presenter.presenting && !overlay);
 
   return (
-    <main className={`app ${className} theme-${shell.theme}${presenter.presenting ? " presenting" : ""}`}>
+    <main
+      className={`app ${className} theme-${shell.theme}${presenter.presenting ? " presenting" : ""}${shell.enhanced ? " enhanced" : ""}`}
+    >
+      {shell.enhanced && (
+        <div className="aurora" aria-hidden="true">
+          <i />
+        </div>
+      )}
       <aside className="sidebar" inert={blocked}>
         <div className="brand">
           <button className="brand-mark" onClick={shell.goHome} aria-label="Back to picker modes">
@@ -52,6 +59,15 @@ export default function ModeLayout({
           {title}
           <div className="top-actions">
             <div className="icon-actions">
+              <button
+                className="icon-toggle"
+                onClick={shell.toggleEnhanced}
+                aria-label="Enhanced visuals"
+                aria-pressed={shell.enhanced}
+                title={shell.enhanced ? "Enhanced visuals on" : "Enhanced visuals off"}
+              >
+                <Icon name="sparkles" />
+              </button>
               <button
                 className="icon-toggle"
                 onClick={shell.toggleSound}

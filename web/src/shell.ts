@@ -14,6 +14,9 @@ export type Shell = {
   /** Shows a short message; pass `undo` to offer an Undo button. */
   toast: (message: string, undo?: () => void) => void;
   reducedMotion: boolean;
+  /** Physics wheel, coin and dice instead of the simpler animations. */
+  enhanced: boolean;
+  toggleEnhanced: () => void;
 };
 
 export type ScreenProps = {

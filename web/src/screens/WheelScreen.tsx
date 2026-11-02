@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import ConfettiCanvas from "../components/ConfettiCanvas";
 import ModeLayout from "../components/ModeLayout";
+import PhysicsWheel from "../components/PhysicsWheel";
+import type { PhysicsWheelHandle } from "../components/PhysicsWheel";
 import ShareDialog from "../components/ShareDialog";
 import TeamsDialog from "../components/TeamsDialog";
 import Wheel from "../components/Wheel";
@@ -42,6 +45,7 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
   const [pasteText, setPasteText] = useState("");
   const [historyTab, setHistoryTab] = useState<"recent" | "stats">("recent");
   const spinButtonRef = useRef<HTMLButtonElement>(null);
+  const physicsWheel = useRef<PhysicsWheelHandle>(null);
   const editStartRef = useRef("");
   const dataRef = useRef(data);
 
@@ -228,24 +232,31 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
     shell.toast(message, () => updateEntries(listId, (current) => restoreAt(current, removed)));
   }
 
-  function spin() {
-    if (!selectedList || spinning || entries.length < 2) return;
+  /** Starts a spin, carrying on from the fling speed if the wheel was flicked. Returns false if it can't spin. */
+  function spin(flingVelocity?: number): boolean {
+    if (!selectedList || spinning || entries.length < 2 || showWinner || dialog !== null) return false;
 
     const listId = selectedList.id;
     const listName = selectedList.name;
     const eliminate = settings.eliminate;
     const picks = pickWinners(entries, settings.weighted, winnerCount, settings.noRepeat ? lastWinnerLabel : undefined);
     const winners = picks.map((index) => entries[index]);
-    const delta = spinDelta(segments[picks[0]], rotation);
+    unlockAudio();
+    let duration = spinMs;
+    if (shell.enhanced && physicsWheel.current) {
+      // The physics wheel plans a friction-driven spin that stops on the winner and clacks its own pointer.
+      duration = physicsWheel.current.spinTo(segments[picks[0]], { durationMs: spinMs, velocity: flingVelocity });
+    } else {
+      const delta = spinDelta(segments[picks[0]], rotation);
+      setRotation((current) => current + delta);
+      sounds.spinTicks(later, spinMs);
+    }
 
     // Options and settings are locked until the wheel stops, so `winners` stays valid.
     setSpinning(true);
     setOutcome(null);
     setShowWinner(false);
     setEntryError("");
-    setRotation((current) => current + delta);
-    unlockAudio();
-    sounds.spinTicks(later, spinMs);
 
     later(() => {
       const timestamp = new Date().toISOString();
@@ -274,7 +285,8 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
             : current.lists,
         };
       });
-    }, spinMs);
+    }, duration);
+    return true;
   }
 
   function closeWinner() {
@@ -406,7 +418,7 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
         aria-label={`${outcome.winners.length > 1 ? "Winners" : "Winner"}: ${outcome.winners.map((w) => w.label).join(", ")}`}
         onClick={(event) => event.target === event.currentTarget && closeWinner()}
       >
-        <Confetti />
+        {shell.enhanced ? !shell.reducedMotion && <ConfettiCanvas /> : <Confetti />}
         <section className="win-card">
           <p>{outcome.winners.length > 1 ? "Winners" : "Winner"}</p>
           <span style={{ backgroundColor: `#${displayHex(outcome.winners[0].colorHex, shell.theme, 0.74)}` }} />
@@ -534,15 +546,28 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
           </div>
         </div>
 
-        <Wheel
-          entries={displayedEntries}
-          segments={segments}
-          rotation={rotation}
-          winnerIndex={!spinning && winnerIndex >= 0 ? winnerIndex : null}
-          durationMs={spinMs}
-        />
+        {shell.enhanced && entries.length > 0 ? (
+          <PhysicsWheel
+            ref={physicsWheel}
+            entries={displayedEntries}
+            segments={segments}
+            winnerIndex={!spinning && winnerIndex >= 0 ? winnerIndex : null}
+            locked={spinning || showWinner || dialog !== null}
+            onFling={(velocity) => {
+              if (!spin(velocity)) physicsWheel.current?.coast(velocity);
+            }}
+          />
+        ) : (
+          <Wheel
+            entries={displayedEntries}
+            segments={segments}
+            rotation={rotation}
+            winnerIndex={!spinning && winnerIndex >= 0 ? winnerIndex : null}
+            durationMs={spinMs}
+          />
+        )}
 
-        <button ref={spinButtonRef} className="spin-button" onClick={spin} disabled={spinning || entries.length < 2}>
+        <button ref={spinButtonRef} className="spin-button" onClick={() => spin()} disabled={spinning || entries.length < 2}>
           {spinning ? "Spinning..." : "Spin"}
         </button>
 
@@ -552,7 +577,7 @@ export default function WheelScreen({ data, setData, shell }: ScreenProps) {
             <strong>{bannerWinners.map((winner) => winner.label).join(", ")}</strong>
           </div>
         )}
-        <p className="shortcut-hint">Tip: press Space to spin</p>
+        <p className="shortcut-hint">{shell.enhanced ? "Tip: flick the wheel or press Space to spin" : "Tip: press Space to spin"}</p>
       </section>
 
       <section className="controls">

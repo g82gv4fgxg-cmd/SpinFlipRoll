@@ -46,6 +46,7 @@ export const defaultSettings: AppSettings = {
   winnerCount: 1,
   sound: true,
   secretUnlocked: false,
+  visuals: "auto",
 };
 
 export function createDefaultData(): AppData {
@@ -295,6 +296,7 @@ function toSettings(value: unknown): AppSettings {
         : 1,
     sound: settings.sound !== false,
     secretUnlocked: settings.secretUnlocked === true,
+    visuals: settings.visuals === "enhanced" || settings.visuals === "classic" ? settings.visuals : "auto",
   };
 }
 

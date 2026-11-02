@@ -62,6 +62,8 @@ export type AppSettings = {
   winnerCount: number;
   sound: boolean;
   secretUnlocked: boolean;
+  /** "auto" uses the physics visuals unless the device asks for reduced motion. */
+  visuals: "auto" | "enhanced" | "classic";
 };
 
 export type AppData = {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Dialog from "./components/Dialog";
 import Toast from "./components/Toast";
 import type { ToastState } from "./components/Toast";
@@ -48,6 +49,12 @@ export default function App() {
   // Until someone picks a theme, follow the device's light or dark setting.
   const theme: Theme = themePreference ?? (prefersLight ? "light" : "dark");
   const unlocked = data.settings.secretUnlocked;
+  const { visuals } = data.settings;
+  const enhanced = visuals === "enhanced" || (visuals === "auto" && !reducedMotion);
+  const motionPrefs = useRef({ enhanced, reducedMotion });
+  motionPrefs.current = { enhanced, reducedMotion };
+  const currentScreen = useRef(screen);
+  currentScreen.current = screen;
 
   useEffect(() => saveData(data), [data]);
   useEffect(() => applyDocumentTheme(theme), [theme]);
@@ -59,19 +66,31 @@ export default function App() {
   }, []);
   const dismissToast = useCallback(() => setToast(null), []);
 
+  /** Changes screen, cross-fading with the View Transitions API in enhanced mode where browsers support it. */
+  const showScreen = useCallback((next: Screen) => {
+    if (next === currentScreen.current) return;
+    currentScreen.current = next;
+    const { enhanced: smooth, reducedMotion: still } = motionPrefs.current;
+    if (smooth && !still && typeof document.startViewTransition === "function") {
+      document.startViewTransition(() => flushSync(() => setScreen(next)));
+    } else {
+      setScreen(next);
+    }
+  }, []);
+
   /** Reads the address bar: a share link opens the "add shared wheel" dialog, anything else picks the screen. */
   const applyLocation = useCallback(() => {
     const payload = sharePayloadFromHash(location.hash);
     if (payload === null) {
-      setScreen(screenFromHash(location.hash));
+      showScreen(screenFromHash(location.hash));
       return;
     }
     history.replaceState(null, "", `${location.pathname}${location.search}`);
-    setScreen("home");
+    showScreen("home");
     const wheel = decodeWheel(payload);
     if (wheel) setIncoming(wheel);
     else showToast("That share link doesn't work. It may have been cut off when it was copied.");
-  }, [showToast]);
+  }, [showToast, showScreen]);
 
   useEffect(() => {
     applyLocation();
@@ -108,7 +127,7 @@ export default function App() {
   function navigate(next: Screen, fromHome = false) {
     const url = next === "home" ? `${location.pathname}${location.search}` : screenHashes[next];
     history.pushState({ fromHome }, "", url);
-    setScreen(next);
+    showScreen(next);
   }
 
   /** Back to the picker. If we came from it, step back in history so the back button doesn't loop. */
@@ -118,8 +137,14 @@ export default function App() {
       history.back();
     } else {
       history.replaceState(null, "", `${location.pathname}${location.search}`);
-      setScreen("home");
+      showScreen("home");
     }
+  }
+
+  function toggleEnhanced() {
+    const next = !enhanced;
+    setData((current) => ({ ...current, settings: { ...current.settings, visuals: next ? "enhanced" : "classic" } }));
+    showToast(next ? "Enhanced visuals on: physics wheel, coin and dice" : "Enhanced visuals off");
   }
 
   function toggleTheme() {
@@ -165,6 +190,8 @@ export default function App() {
     goHome,
     toast: showToast,
     reducedMotion,
+    enhanced,
+    toggleEnhanced,
   };
 
   let content;

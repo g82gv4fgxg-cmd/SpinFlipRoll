@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import DiceTable from "../components/DiceTable";
+import type { DiceTableHandle } from "../components/DiceTable";
 import Die from "../components/Die";
 import ModeLayout from "../components/ModeLayout";
 import { dicePresets, dieSides, maxDice, minDice, rollDice, rollDie } from "../dice";
@@ -22,6 +24,7 @@ export default function DiceScreen({ data, setData, shell }: ScreenProps) {
   const [held, setHeld] = useState<Set<number>>(() => new Set());
   const [rolling, setRolling] = useState(false);
   const [lastTotal, setLastTotal] = useState<number | null>(null);
+  const table = useRef<DiceTableHandle>(null);
 
   const allHeld = held.size >= count;
   const history = data.diceHistory;
@@ -59,16 +62,22 @@ export default function DiceScreen({ data, setData, shell }: ScreenProps) {
     setLastTotal(null);
     unlockAudio();
 
-    // Flicker random faces, slowing down, before settling on the result.
-    let time = 0;
-    let gap = rollMs / 17;
-    while (time < rollMs - gap) {
-      later(() => {
-        setValues((faces) => faces.map((face, index) => (held.has(index) ? face : rollDie(sides))));
-        sounds.diceRattle();
-      }, time);
-      time += gap;
-      gap *= 1.12;
+    let duration = rollMs;
+    if (shell.enhanced && table.current) {
+      // Real 3D dice: thrown into the tray, they tumble, collide and settle on the result.
+      duration = table.current.roll(final, held);
+    } else {
+      // Flicker random faces, slowing down, before settling on the result.
+      let time = 0;
+      let gap = rollMs / 17;
+      while (time < rollMs - gap) {
+        later(() => {
+          setValues((faces) => faces.map((face, index) => (held.has(index) ? face : rollDie(sides))));
+          sounds.diceRattle();
+        }, time);
+        time += gap;
+        gap *= 1.12;
+      }
     }
 
     later(() => {
@@ -79,7 +88,7 @@ export default function DiceScreen({ data, setData, shell }: ScreenProps) {
       setLastTotal(total);
       sounds.diceLand(later);
       setData((existing) => ({ ...existing, diceHistory: [result, ...existing.diceHistory].slice(0, historyLimit) }));
-    }, rollMs);
+    }, duration);
   }
 
   function clearHistory() {
@@ -121,20 +130,48 @@ export default function DiceScreen({ data, setData, shell }: ScreenProps) {
       title={<h2 className="mode-title">Dice</h2>}
     >
       <section className="dice-panel">
-        <div className={`dice-tray dice-count-${count}`}>
-          {values.map((value, index) => (
-            <Die
-              key={index}
-              index={index}
-              value={value}
+        {shell.enhanced ? (
+          <>
+            <DiceTable
+              ref={table}
+              count={count}
               sides={sides}
-              held={held.has(index)}
-              rolling={rolling}
-              disabled={rolling || value === null}
-              onToggle={() => toggleHeld(index)}
+              values={values}
+              held={held}
+              disabled={rolling}
+              onToggleHold={toggleHeld}
             />
-          ))}
-        </div>
+            <div className="dice-chips" aria-label="Dice values">
+              {values.map((value, index) => (
+                <button
+                  key={index}
+                  className={`die-chip${held.has(index) ? " held" : ""}`}
+                  aria-pressed={held.has(index)}
+                  aria-label={`Die ${index + 1}: ${rolling && !held.has(index) ? "rolling" : value ?? "not rolled yet"}${held.has(index) ? ", held" : ""}`}
+                  disabled={rolling || value === null}
+                  onClick={() => toggleHeld(index)}
+                >
+                  {rolling && !held.has(index) ? "…" : value ?? "?"}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className={`dice-tray dice-count-${count}`}>
+            {values.map((value, index) => (
+              <Die
+                key={index}
+                index={index}
+                value={value}
+                sides={sides}
+                held={held.has(index)}
+                rolling={rolling}
+                disabled={rolling || value === null}
+                onToggle={() => toggleHeld(index)}
+              />
+            ))}
+          </div>
+        )}
 
         <button className="spin-button dice-roll-button" onClick={roll} disabled={rolling || allHeld}>
           {rolling ? "Rolling..." : allHeld ? "Release a die to roll" : held.size ? "Roll the rest" : "Roll"}

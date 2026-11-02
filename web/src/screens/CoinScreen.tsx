@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import Coin from "../components/Coin";
 import ModeLayout from "../components/ModeLayout";
+import PhysicsCoin from "../components/PhysicsCoin";
+import type { PhysicsCoinHandle } from "../components/PhysicsCoin";
 import { displayHex, formatWhen, mergeHistory, plural } from "../format";
 import { usePresenting, useSpaceKey, useTimers } from "../hooks";
 import { blurOnEnter, onEnter } from "../keys";
@@ -22,6 +24,7 @@ export default function CoinScreen({ data, setData, shell }: ScreenProps) {
   const [flipping, setFlipping] = useState(false);
   const [winnerIndex, setWinnerIndex] = useState<0 | 1 | null>(null);
   const editStartRef = useRef("");
+  const physicsCoin = useRef<PhysicsCoinHandle>(null);
 
   const selectedCoin = data.coinSets.find((coin) => coin.id === data.selectedCoinId) ?? data.coinSets[0];
   const coinHistory = data.coinHistory.filter((result) => result.coinId === selectedCoin?.id);
@@ -122,9 +125,15 @@ export default function CoinScreen({ data, setData, shell }: ScreenProps) {
 
     setFlipping(true);
     setWinnerIndex(null);
-    setCoinRotation((current) => current + delta);
     unlockAudio();
-    sounds.coinTicks(later, flipMs);
+    let duration = flipMs;
+    if (shell.enhanced && physicsCoin.current) {
+      // A simulated toss: the coin flies, bounces and settles, chiming on each bounce.
+      duration = physicsCoin.current.toss(chosen);
+    } else {
+      setCoinRotation((current) => current + delta);
+      sounds.coinTicks(later, flipMs);
+    }
 
     later(() => {
       const id = createId();
@@ -138,7 +147,7 @@ export default function CoinScreen({ data, setData, shell }: ScreenProps) {
         const result: CoinFlipResult = { id, label: coin.sides[chosen].label, coinId, coinName: coin.name, timestamp };
         return { ...current, coinHistory: [result, ...current.coinHistory].slice(0, historyLimit) };
       });
-    }, flipMs);
+    }, duration);
   }
 
   function clearCoinHistory() {
@@ -210,7 +219,11 @@ export default function CoinScreen({ data, setData, shell }: ScreenProps) {
     >
       <section className="coin-panel">
         {/* Keyed by coin so switching coins resets it instantly instead of spinning it backwards. */}
-        <Coin key={selectedCoin.id} sides={displayedSides} rotation={coinRotation} flipping={flipping} durationMs={flipMs} />
+        {shell.enhanced ? (
+          <PhysicsCoin key={selectedCoin.id} ref={physicsCoin} sides={displayedSides} restingSide={winnerIndex ?? 0} />
+        ) : (
+          <Coin key={selectedCoin.id} sides={displayedSides} rotation={coinRotation} flipping={flipping} durationMs={flipMs} />
+        )}
 
         <button className="spin-button coin-flip-button" onClick={flipCoin} disabled={flipping}>
           {flipping ? "Flipping..." : "Flip"}

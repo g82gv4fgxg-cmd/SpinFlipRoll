@@ -58,7 +58,9 @@ export default function HomeScreen({ shell, secretUnlocked, canInstall, onInstal
   }
 
   return (
-    <main className={`mode-screen theme-${shell.theme} ${entering ? `launching launching-${entering}` : ""}`}>
+    <main
+      className={`mode-screen theme-${shell.theme}${shell.enhanced ? " enhanced" : ""} ${entering ? `launching launching-${entering}` : ""}`}
+    >
       <section className="mode-hero">
         <div>
           <button className="hero-brand" onClick={tapTitle}>
@@ -67,6 +69,13 @@ export default function HomeScreen({ shell, secretUnlocked, canInstall, onInstal
           <h1>Choose your picker</h1>
         </div>
         <div className="hero-actions">
+          <button
+            className={`theme-toggle visuals-toggle${shell.enhanced ? " on" : ""}`}
+            onClick={shell.toggleEnhanced}
+            aria-pressed={shell.enhanced}
+          >
+            <Icon name="sparkles" size={16} /> Enhanced visuals
+          </button>
           {canInstall && (
             <button className="theme-toggle" onClick={onInstall}>
               Install app
