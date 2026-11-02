@@ -12,6 +12,7 @@ struct WheelSpinView: View {
     // Wheel animation state
     @State private var rotationDegrees = 0.0
     @State private var spinning = false
+    @State private var eliminating = false   // Eliminate mode: winner is on show before it's removed
     @State private var winnerIndex: Int? = nil
     @State private var lastWinnerLabel: String? = nil
 
@@ -76,7 +77,7 @@ struct WheelSpinView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(spinning || entries.count < 2)
+                .disabled(spinning || eliminating || entries.count < 2)
 
                 if eliminateMode && !entries.isEmpty {
                     Text("\(entries.count) option\(entries.count == 1 ? "" : "s") remaining")
@@ -100,7 +101,15 @@ struct WheelSpinView: View {
         .sheet(isPresented: $showEntries)  { ManageEntriesView(list: list) }
         .sheet(isPresented: $showHistory)  { HistoryView(list: list) }
         .sheet(isPresented: $showBulkAdd)  { BulkAddView(list: list) }
-        .sheet(isPresented: $showWinner, onDismiss: { winnerIndex = nil }) {
+        .sheet(isPresented: $showWinner, onDismiss: {
+            winnerIndex = nil
+            // "Remove & Spin Again": spin once the winner sheet has fully closed.
+            // (An onChange on pendingAutoSpin fired too early, while winnerIndex was still set, so it never spun.)
+            if pendingAutoSpin {
+                pendingAutoSpin = false
+                spin()
+            }
+        }) {
             if let idx = winnerIndex, idx < entries.count {
                 WinnerView(
                     entry: entries[idx],
@@ -118,12 +127,6 @@ struct WheelSpinView: View {
                     }
                 )
             }
-        }
-        // Auto-spin after Remove & Spin Again
-        .onChange(of: pendingAutoSpin) { _, pending in
-            guard pending, !spinning, winnerIndex == nil, entries.count >= 2 else { return }
-            pendingAutoSpin = false
-            spin()
         }
         // Re-sync connectivity when list changes
         .onChange(of: list.entries.count) { _, _ in
@@ -199,18 +202,27 @@ struct WheelSpinView: View {
     private func removeEntry(at idx: Int) {
         let sorted = list.sortedEntries
         guard idx < sorted.count else { return }
-        modelContext.delete(sorted[idx])
+        removeEntry(sorted[idx])
+    }
+
+    /// Takes the entry out of the list before deleting it, so the wheel updates straight away
+    /// instead of still showing a deleted entry until SwiftData next saves.
+    private func removeEntry(_ entry: WheelEntry) {
+        list.entries.removeAll { $0 === entry }
+        modelContext.delete(entry)
         // Reindex
         for (i, e) in list.sortedEntries.enumerated() { e.order = i }
     }
 
     private func spin() {
-        guard !spinning, entries.count >= 2 else { return }
+        guard !spinning, !eliminating, entries.count >= 2 else { return }
 
         let chosen = WheelMath.pickWinner(
             entries, weighted: weighted,
             excluding: noRepeat ? lastWinnerLabel : nil
         )
+        // Keep the winning entry itself so Eliminate removes the right one even if indexes shift.
+        let winnerModel = list.sortedEntries[chosen]
         let delta = WheelMath.spinDelta(
             winnerMid: segments[chosen].mid,
             currentRotation: rotationDegrees
@@ -242,9 +254,12 @@ struct WheelSpinView: View {
             UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
 
             if self.eliminateMode {
+                // Block new spins until the winner is removed, otherwise it vanishes mid-spin.
+                self.eliminating = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    self.removeEntry(at: chosen)
+                    self.removeEntry(winnerModel)
                     self.winnerIndex = nil
+                    self.eliminating = false
                 }
             } else {
                 self.showWinner = true
