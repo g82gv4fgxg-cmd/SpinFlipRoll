@@ -120,17 +120,18 @@ struct BulkAddView: View {
     }
 
     private func bulkAdd() {
-        let existing = Set(list.entries.map { $0.label.lowercased() })
+        // Updated as we go so a line repeated in the pasted text is only added once.
+        var existing = Set(list.entries.map { $0.label.lowercased() })
         let newLabels = text
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty && !existing.contains($0.lowercased()) }
+            .filter { !$0.isEmpty && existing.insert($0.lowercased()).inserted }
 
-        for (i, label) in newLabels.enumerated() {
+        for label in newLabels {
             let entry = WheelEntry(
                 label: label,
                 colorHex: list.nextColorHex(),
-                order: list.entries.count + i
+                order: list.entries.count
             )
             list.entries.append(entry)
         }

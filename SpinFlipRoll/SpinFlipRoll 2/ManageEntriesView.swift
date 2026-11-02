@@ -10,7 +10,6 @@ struct ManageEntriesView: View {
     @State private var importExportText = ""
     @State private var showImportExport = false
     @State private var importExportMode: ImportExportMode = .export
-    @State private var shareURL: URL? = nil
 
     enum ImportExportMode { case `import`, export }
 
@@ -46,8 +45,9 @@ struct ManageEntriesView: View {
                     }
                     .disabled(list.entries.isEmpty)
                     Spacer()
-                    Button("Share") {
-                        shareWheel()
+                    // Shares the same JSON as Export, which the recipient can paste into Import.
+                    ShareLink(item: exportJSON(), subject: Text(list.name)) {
+                        Text("Share")
                     }
                     .disabled(list.entries.isEmpty)
                 }
@@ -59,9 +59,6 @@ struct ManageEntriesView: View {
                     onImport: { importJSON() }
                 )
             }
-            .sheet(item: $shareURL) { url in
-                ShareSheet(url: url)
-            }
         }
     }
 
@@ -69,7 +66,10 @@ struct ManageEntriesView: View {
 
     private func deleteEntries(_ offsets: IndexSet) {
         let sorted = list.sortedEntries
-        for i in offsets { modelContext.delete(sorted[i]) }
+        let removed = offsets.map { sorted[$0] }
+        // Take the entries out of the list before deleting them so the list updates straight away.
+        list.entries.removeAll { entry in removed.contains { $0 === entry } }
+        removed.forEach { modelContext.delete($0) }
         reindex()
     }
 
@@ -94,29 +94,21 @@ struct ManageEntriesView: View {
               let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
         else { return }
 
-        let existing = Set(list.entries.map { $0.label.lowercased() })
-        for (i, item) in parsed.enumerated() {
+        // Updated as we go so a label repeated within the pasted JSON is only added once.
+        var existing = Set(list.entries.map { $0.label.lowercased() })
+        for item in parsed {
             let label = (item["label"] as? String ?? "").trimmingCharacters(in: .whitespaces)
-            guard !label.isEmpty, !existing.contains(label.lowercased()) else { continue }
+            guard !label.isEmpty, existing.insert(label.lowercased()).inserted else { continue }
             let entry = WheelEntry(
                 label: label,
-                colorHex: item["color"] as? String ?? list.nextColorHex(),
+                // "colorHex" is what the web app exports.
+                colorHex: item["color"] as? String ?? item["colorHex"] as? String ?? list.nextColorHex(),
                 weight: item["weight"] as? Double ?? 1.0,
-                order: list.entries.count + i
+                order: list.entries.count
             )
             list.entries.append(entry)
         }
         showImportExport = false
-    }
-
-    private func shareWheel() {
-        let data = list.sortedEntries.map { ["label": $0.label, "weight": $0.weight] as [String: Any] }
-        guard let json = try? JSONSerialization.data(withJSONObject: data),
-              let encoded = String(data: json, encoding: .utf8)
-                  .flatMap({ $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) }),
-              let url = URL(string: "spinfliproll://share?data=\(encoded)")
-        else { return }
-        shareURL = url
     }
 }
 
@@ -195,20 +187,5 @@ private struct ImportExportSheet: View {
                     }
                 }
         }
-    }
-}
-
-// MARK: - ShareSheet
-
-private struct ShareSheet: View, Identifiable {
-    var id: String { url.absoluteString }
-    let url: URL
-
-    var body: some View {
-        ShareLink(item: url) {
-            Label("Share Wheel Link", systemImage: "square.and.arrow.up")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .presentationDetents([.height(120)])
     }
 }
