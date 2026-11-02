@@ -1,3 +1,4 @@
+import { randomInt } from "./random";
 import type { WheelEntry } from "./types";
 
 export const palette = [
@@ -67,7 +68,7 @@ export function pickWinner(entries: WheelEntry[], weighted: boolean, excluding?:
   if (!poolCanWin) pool = all;
 
   if (!weightDecides) {
-    return pool[Math.floor(Math.random() * pool.length)] ?? 0;
+    return pool[randomInt(pool.length)] ?? 0;
   }
 
   const target = Math.random() * totalWeight(entries, pool);
@@ -80,6 +81,29 @@ export function pickWinner(entries: WheelEntry[], weighted: boolean, excluding?:
 
   // Floating point rounding: fall back to the last option that has weight.
   return [...pool].reverse().find((index) => weightOf(entries[index]) > 0) ?? pool[pool.length - 1] ?? 0;
+}
+
+/**
+ * Picks up to `count` different winners. The first one honours "No repeat" and is the slice the
+ * wheel lands on; the rest are drawn from the options left over.
+ */
+export function pickWinners(entries: WheelEntry[], weighted: boolean, count: number, excluding?: string): number[] {
+  if (entries.length === 0) return [];
+  const all = entries.map((_, index) => index);
+  const canWin = weighted && totalWeight(entries, all) > 0 ? all.filter((index) => weightOf(entries[index]) > 0) : all;
+  const target = Math.max(1, Math.min(Math.floor(count) || 1, canWin.length));
+  const winners = [pickWinner(entries, weighted, excluding)];
+
+  while (winners.length < target) {
+    const remaining = canWin.filter((index) => !winners.includes(index));
+    const pick = pickWinner(
+      remaining.map((index) => entries[index]),
+      weighted
+    );
+    winners.push(remaining[pick]);
+  }
+
+  return winners;
 }
 
 export function spinDelta(segment: Segment, currentRotation: number, spins = 7): number {

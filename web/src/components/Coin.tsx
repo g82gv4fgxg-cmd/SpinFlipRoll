@@ -1,15 +1,20 @@
 import type { CSSProperties } from "react";
-import type { CoinSide } from "./types";
+import type { CoinSide } from "../types";
 
 type CoinProps = {
   sides: [CoinSide, CoinSide];
   rotation: number;
   flipping: boolean;
+  /** Length of the flip animation, matched to the flip timer. */
+  durationMs: number;
 };
 
-export default function Coin({ sides, rotation, flipping }: CoinProps) {
+export default function Coin({ sides, rotation, flipping, durationMs }: CoinProps) {
   return (
-    <div className={`coin-stage ${flipping ? "tossing" : ""}`} aria-live="polite">
+    <div
+      className={`coin-stage ${flipping ? "tossing" : ""}`}
+      style={{ "--flip-duration": `${durationMs}ms` } as CSSProperties}
+    >
       <div className="coin-shadow" aria-hidden="true" />
       <div className={`coin ${flipping ? "flipping" : ""}`} style={{ transform: `rotateY(${rotation}deg)` }}>
         <CoinFace side={sides[0]} className="coin-front" />

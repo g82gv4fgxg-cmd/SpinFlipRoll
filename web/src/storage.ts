@@ -4,10 +4,13 @@ import type {
   CoinFlipResult,
   CoinSet,
   CoinSide,
+  DiceRollResult,
+  DiceSettings,
   SpinResult,
   WheelEntry,
   WheelList,
 } from "./types";
+import { clampDiceCount, isDieSides } from "./dice";
 import { labelKey, nextColorHex, normalizeHex, palette } from "./wheelMath";
 
 const storageKey = "spinfliproll:web:v1";
@@ -36,11 +39,22 @@ export function createDefaultCoinSides(): [CoinSide, CoinSide] {
   ];
 }
 
+export const defaultSettings: AppSettings = {
+  weighted: false,
+  noRepeat: false,
+  eliminate: false,
+  winnerCount: 1,
+  sound: true,
+  secretUnlocked: false,
+};
+
 export function createDefaultData(): AppData {
+  const listId = createId();
+  const coinId = createId();
   return {
     lists: [
       {
-        id: createId(),
+        id: listId,
         name: "My Wheel",
         entries: [
           { id: createId(), label: "Pizza", colorHex: "D4756A", weight: 1 },
@@ -50,14 +64,14 @@ export function createDefaultData(): AppData {
       },
     ],
     history: [],
-    coinSets: [{ id: createId(), name: "Classic Coin", sides: createDefaultCoinSides() }],
+    coinSets: [{ id: coinId, name: "Classic Coin", sides: createDefaultCoinSides() }],
     coinHistory: [],
-    settings: {
-      weighted: false,
-      noRepeat: false,
-      eliminate: false,
-      winnerCount: 1,
-    },
+    dice: { count: 2, sides: 6 },
+    diceHistory: [],
+    selectedListId: listId,
+    selectedCoinId: coinId,
+    gameBest: 0,
+    settings: { ...defaultSettings },
   };
 }
 
@@ -75,13 +89,20 @@ export function loadData(): AppData {
   if (!isRecord(raw)) return fallback;
 
   // Saved data is checked field by field so one damaged value can't stop the app from loading.
-  const lists = arrayOf(raw.lists, toWheelList);
-  const coinSets = arrayOf(raw.coinSets, toCoinSet);
+  const savedLists = arrayOf(raw.lists, toWheelList);
+  const savedCoins = arrayOf(raw.coinSets, toCoinSet);
+  const lists = savedLists.length ? savedLists : fallback.lists;
+  const coinSets = savedCoins.length ? savedCoins : fallback.coinSets;
   return {
-    lists: lists.length ? lists : fallback.lists,
+    lists,
     history: arrayOf(raw.history, toSpinResult),
-    coinSets: coinSets.length ? coinSets : fallback.coinSets,
+    coinSets,
     coinHistory: arrayOf(raw.coinHistory, toCoinFlipResult),
+    dice: toDiceSettings(raw.dice),
+    diceHistory: arrayOf(raw.diceHistory, toDiceRollResult),
+    selectedListId: pickId(raw.selectedListId, lists),
+    selectedCoinId: pickId(raw.selectedCoinId, coinSets),
+    gameBest: typeof raw.gameBest === "number" && Number.isFinite(raw.gameBest) ? Math.max(0, Math.floor(raw.gameBest)) : 0,
     settings: toSettings(raw.settings),
   };
 }
@@ -90,8 +111,10 @@ export function saveData(data: AppData): void {
   writeItem(storageKey, JSON.stringify(data));
 }
 
-export function loadTheme(): Theme {
-  return readItem(themeKey) === "light" ? "light" : "dark";
+/** The theme the user picked, or null if they haven't chosen one (then the device setting is used). */
+export function loadThemePreference(): Theme | null {
+  const saved = readItem(themeKey);
+  return saved === "light" || saved === "dark" ? saved : null;
 }
 
 export function saveTheme(theme: Theme): void {
@@ -267,6 +290,40 @@ function toSettings(value: unknown): AppSettings {
     noRepeat: settings.noRepeat === true,
     eliminate: settings.eliminate === true,
     winnerCount:
-      typeof settings.winnerCount === "number" && settings.winnerCount >= 1 ? Math.floor(settings.winnerCount) : 1,
+      typeof settings.winnerCount === "number" && settings.winnerCount >= 1
+        ? Math.min(10, Math.floor(settings.winnerCount))
+        : 1,
+    sound: settings.sound !== false,
+    secretUnlocked: settings.secretUnlocked === true,
   };
+}
+
+function toDiceSettings(value: unknown): DiceSettings {
+  const dice = isRecord(value) ? value : {};
+  return {
+    count: typeof dice.count === "number" ? clampDiceCount(dice.count) : 2,
+    sides: isDieSides(dice.sides) ? dice.sides : 6,
+  };
+}
+
+function toDiceRollResult(value: unknown): DiceRollResult | null {
+  if (!isRecord(value) || !isDieSides(value.sides) || !Array.isArray(value.values)) return null;
+  const sides = value.sides;
+  const values = value.values.filter(
+    (item): item is number => typeof item === "number" && Number.isInteger(item) && item >= 1 && item <= sides
+  );
+  const timestamp = toTimestamp(value.timestamp);
+  if (values.length === 0 || timestamp === null) return null;
+  return {
+    id: idOrNew(value.id),
+    values,
+    sides,
+    total: values.reduce((sum, item) => sum + item, 0),
+    timestamp,
+  };
+}
+
+/** Keeps a saved selection only if that wheel or coin still exists. */
+function pickId(value: unknown, items: { id: string }[]): string {
+  return typeof value === "string" && items.some((item) => item.id === value) ? value : items[0]?.id ?? "";
 }

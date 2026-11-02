@@ -1,11 +1,13 @@
-import type { WheelEntry } from "./types";
-import type { Segment } from "./wheelMath";
+import type { WheelEntry } from "../types";
+import type { Segment } from "../wheelMath";
 
 type WheelProps = {
   entries: WheelEntry[];
   segments: Segment[];
   rotation: number;
   winnerIndex: number | null;
+  /** Length of the spin animation, matched to the spin timer. */
+  durationMs: number;
 };
 
 const center = 160;
@@ -14,7 +16,7 @@ const radius = 160;
 const labelRadius = 148;
 const maxLabelLength = 15;
 
-export default function Wheel({ entries, segments, rotation, winnerIndex }: WheelProps) {
+export default function Wheel({ entries, segments, rotation, winnerIndex, durationMs }: WheelProps) {
   if (entries.length === 0) {
     return <div className="empty-wheel">Add options</div>;
   }
@@ -31,7 +33,7 @@ export default function Wheel({ entries, segments, rotation, winnerIndex }: Whee
         viewBox="0 0 320 320"
         role="img"
         aria-label="Spinning decision wheel"
-        style={{ transform: `rotate(${rotation}deg)` }}
+        style={{ transform: `rotate(${rotation}deg)`, transitionDuration: `${durationMs}ms` }}
       >
         {segments.map((segment, index) => {
           const entry = entries[index];
